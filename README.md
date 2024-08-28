@@ -1,5 +1,13 @@
 # ZealOS
 
+
+This is my effort to fix ZealOS compiler problem
+U8 foo[] = "ABCD"; 
+"%c\n", foo[0];
+This is not possible in the regular ZealOS disto even though it works great in the standard TempleOS distro.
+
+So far I've made it to work from command line (global scope) and I'm trying to make it work with in functions.
+
 [![Discord](https://img.shields.io/discord/934200098144022609?color=7289DA&label=Discord&logo=discord&logoColor=white)](https://discord.gg/rK6U3xdr7D) [![](https://img.shields.io/badge/wiki-documentation-forestgreen)](https://zeal-operating-system.github.io/ZealOS-wiki/) [![Build ZealOS ISOs](https://github.com/Zeal-Operating-System/ZealOS/actions/workflows/build.yml/badge.svg)](https://github.com/Zeal-Operating-System/ZealOS/actions/workflows/build.yml)
 
 The Zeal Operating System is a modernized fork of the 64-bit Temple Operating System. Guiding principles of development include transparency, full user control, and adherence to public-domain/open-source implementations.
