@@ -127,55 +127,56 @@ class CVI2
 };
 
 U0 ParseVarInit2(CCompCtrl *cc, U8 **_dst, CHashClass *tmpc, CArrayDim *tmpad,
-                 U8 *data_addr_rip, U8 **_base, Bool data_heap, I64 pass)
+				 U8 *data_addr_rip, U8 **_base, Bool data_heap, I64 pass)
 {
-    tmpc = OptClassFwd(tmpc);
-    CArrayDim *tmpad1 = tmpad->next;
-    if (tmpad1)
-    {
-        if (!tmpc->ptr_stars_count && (tmpc->raw_type == RT_I8 || tmpc->raw_type == RT_U8) && cc->token == TK_STR)
-        {
-            LexPopNoRestore(cc);
-            I64 i;
-            U8 *st = LexExtStr(cc, &i);
-            
-            if (tmpad1->count < 0)
-            {
-                tmpad1->count = i;
-                tmpad->total_count = i;
-                
-                Free(*_base);
-                if (data_heap)
-                    *_base = MAlloc(i);
-                else
-                    *_base = MAlloc(i, Fs->code_heap);
-                MemCpy(*_base, st, i);
-                *_dst = *_base;
-            }
-            else
-            {
-                if (tmpad1->count > 0)
-                {
-                    I64 copy_size = i;
-                    if (tmpad1->count < i)
-                        copy_size = tmpad1->count;
-                    
-                    MemCpy(*_dst, st, copy_size);
-                    if (tmpad1->count > i)
-                        MemSet(*_dst + i, 0, tmpad1->count - i);
-                }
-            }
-            
-            Free(st);
-            LexPush(cc);
-        }
-        else
+	I64			 i, j, count;
+	U8			*st, *_b;
+	CVI2		 head, *tmpvi, *tmpvi1;
+	CArrayDim	*tmpad1;
+
+	tmpc = OptClassFwd(tmpc);
+	if (tmpad1 = tmpad->next)
+	{
+		if (!tmpc->ptr_stars_count && (tmpc->raw_type == RT_I8 || tmpc->raw_type == RT_U8) && cc->token == TK_STR)
+		{
+			LexPopNoRestore(cc);
+			st = LexExtStr(cc,&i);
+			if (tmpad1->count < 0)
+			{//[]
+				tmpad1->count = i;
+				tmpad->total_count = i;
+				Free(*_base);
+				if (data_heap)
+					*_base = MAlloc(i);
+				else
+					*_base = MAlloc(i, Fs->code_heap);
+				MemCopy(*_base, st, i);
+				*_dst = *_base;
+			}
+			else
+			{
+
+				if(tmpad->count > 0)
+				{
+					I64 copy_size = i;
+					if(tmpad1->count < i )
+						copy_size = tmpad1->count;
+
+				MemCopy(*_dst, st, copy_size);
+				if(tmpad1->count > i)
+					MemSet(*_dst + i, 0, tmpad1->count -i);
+				}
+			}
+			Free(st);
+			LexPush(cc);
+		}
+		else
 		{
 			if (cc->token == '{')
 			{
 				LexPopNoRestore(cc);
 				LexPush(cc);
-				Lex(cc);
+				Lex(cc);
 			}
 			if (tmpad1->count < 0)
 			{//[]
@@ -278,48 +279,47 @@ U0 ParseStaticInit(CCompCtrl *cc, CMemberList *tmpm, I64 pass)
 }
 
 U0 ParseArrayDims(CCompCtrl *cc, I64 mode, CArrayDim *dim)
-{
-    dim->next = NULL;
-    dim->count = 0;
-    dim->total_count = 1;
-    CArrayDim *tmpad1 = &dim->next;
-    
-    if (cc->token == '[')
-    {
-        if (mode.u8[1] == PRS1B_FUN_ARG)
-            LexExcept(cc, "No arrays in function args at ");
-        do
-        {
-            I64 j;
-            if (Lex(cc) == ']' && !dim->next)
-                j = -1;  // Use -1 to indicate undefined size
-            else
-            {
-                j = LexExpressionI64(cc);
-                if (j < 0)
-                    LexExcept(cc, "Invalid array size at ");
-            }
-            
-            CArrayDim *tmpad = MAlloc(sizeof(CArrayDim));
-            tmpad->next = NULL;
-            tmpad->count = j;
-            tmpad->total_count = 1;
-            
-            if (!dim->next)
-                dim->next = tmpad;
-            else
-                tmpad1->next = tmpad;
-            tmpad1 = tmpad;
-            
-            if (j >= 0)
-                dim->total_count *= j;
-            else
-                dim->total_count = 0;  // Set to 0 for undefined size
-            
-            if (cc->token != ']')
-                LexExcept(cc, "Missing ']' at ");
-        } while (Lex(cc) == '[');
-    }
+{//dim->next!=0 for array
+	CArrayDim	*tmpad, *tmpad1;
+	I64			 j;
+
+	dim->next = NULL;
+	dim->count = 0;
+	dim->total_count = 1;
+	tmpad1 = &dim->next;
+	if (cc->token == '[')
+	{
+		if (mode.u8[1] == PRS1B_FUN_ARG)
+			LexExcept(cc, "No arrays in function args at ");
+		do
+		{
+			if (Lex(cc) == ']' && !dim->next)
+				j = -1;
+			else
+			{
+				if ((j = LexExpressionI64(cc)) < 0)
+					LexExcept(cc, "Invalid array size at ");
+			}
+			tmpad = MAlloc(sizeof(CArrayDim));
+			tmpad->next = NULL;
+			tmpad->count = j;
+			tmpad->total_count = 1;
+			if(!dim->next)
+				dim->next = tmpad;
+			else
+				tmpad1->next = tmpad;
+			tmpad1 = tmpad;			
+
+            if( j >= 0)
+				dim->total_count *= j;
+			else
+				dim->total_count = 0;
+
+			if (cc->token != ']')
+				LexExcept(cc, "Missing ']' at ");
+		}
+		while (Lex(cc) == '[');
+	}
 }
 
 CHashClass *ParseType(CCompCtrl *cc, CHashClass **_tmpc1, I64 *_mode, CMemberList *tmpm, U8 **_ident, CHashFun **_fun_ptr,
